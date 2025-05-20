@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Upload file</title>
+</head>
+<body>
+<h1>Загрузить файл</h1>
+<form id="uploadForm" enctype="multipart/form-data">
+  <input type="file" name="file"/><br/><br/>
+  <button type="submit">Отправить</button>
+</form>
+<script>
+  document.getElementById('uploadForm').onsubmit = async ev => {
+    ev.preventDefault();
+    const formData = new FormData(ev.target);
+    const res = await fetch('/api/files', { method: 'POST', body: formData });
+    if (res.status === 201) {
+      const json = await res.json();
+      alert('Загружено, id=' + json.id);
+    } else if (res.status === 409) {
+      const msg = (await res.json()).error;
+      alert('Плагиат: ' + msg);
+    } else {
+      alert('Ошибка: ' + res.status);
+    }
+  };
+</script>
+</body>
+</html>

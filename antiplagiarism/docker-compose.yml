@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14
+    container_name: antiplagiarism_container
+    environment:
+      POSTGRES_USER: antiplagiarism_user
+      POSTGRES_PASSWORD: antiplagiarism_pass
+      POSTGRES_DB: antiplagiarism_db
+    ports:
+      - "5542:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
