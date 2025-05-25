@@ -2,29 +2,65 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <title>Upload file</title>
+  <title>Загрузка и анализ файла</title>
+
+  <style>
+    body      { font-family: sans-serif; max-width: 720px; margin: 40px auto; }
+    #cloud    { max-width: 480px; display: none; margin-top: 24px; }
+    #info     { margin-top: 24px; font-size: 1.1rem; }
+    button    { padding: 6px 18px; }
+  </style>
 </head>
 <body>
-<h1>Загрузить файл</h1>
+
+<h1>Загрузить файл и сразу получить анализ</h1>
+
 <form id="uploadForm" enctype="multipart/form-data">
-  <input type="file" name="file"/><br/><br/>
+  <input type="file" name="file" required/>
   <button type="submit">Отправить</button>
 </form>
+
+<div id="info"></div>
+<img id="cloud" alt="Облако слов"/>
+
 <script>
-  document.getElementById('uploadForm').onsubmit = async ev => {
+  const form   = document.getElementById('uploadForm');
+  const info   = document.getElementById('info');
+  const cloud  = document.getElementById('cloud');
+
+  form.addEventListener('submit', async ev => {
     ev.preventDefault();
-    const formData = new FormData(ev.target);
-    const res = await fetch('/api/files', { method: 'POST', body: formData });
-    if (res.status === 201) {
-      const json = await res.json();
-      alert('Загружено, id=' + json.id);
-    } else if (res.status === 409) {
-      const msg = (await res.json()).error;
-      alert('Плагиат: ' + msg);
-    } else {
-      alert('Ошибка: ' + res.status);
+
+    info.textContent  = '';
+    cloud.style.display = 'none';
+
+    const res = await fetch('/api/files', {
+      method : 'POST',
+      body   : new FormData(form)
+    });
+
+    if (res.status === 409) {
+      const { error } = await res.json();
+      alert('Плагиат: ' + error);
+      return;
     }
-  };
+    if (res.status !== 201) {
+      alert('Ошибка загрузки: ' + res.status);
+      return;
+    }
+
+    const { fileId, filename, analysis } = await res.json();
+
+    info.textContent =
+            `Файл «${filename}» сохранён (#${fileId})
+       — абзацев: ${analysis.paragraphs},
+       слов: ${analysis.words},
+       символов: ${analysis.characters}`;
+
+    cloud.src = analysis.cloudUrl;
+    cloud.style.display = 'block';
+  });
 </script>
+
 </body>
 </html>

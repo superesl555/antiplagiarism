@@ -1,10 +1,10 @@
-// src/main/java/org/antiplagiarism/filestorage/controller/FileController.java
 package org.antiplagiarism.filestorage.controller;
 
+import org.antiplagiarism.fileanalysis.AnalysisResult;
+import org.antiplagiarism.fileanalysis.TextAnalyzer;
 import org.antiplagiarism.filestorage.entity.FileEntity;
 import org.antiplagiarism.filestorage.exception.DuplicateFileException;
 import org.antiplagiarism.filestorage.service.FilesStoringService;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,30 +23,32 @@ public class FileController {
     }
 
     @PostMapping
-    public ResponseEntity<FileEntity> upload(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String,Object>> upload(@RequestParam("file") MultipartFile file) {
+
         FileEntity saved = service.store(file);
-        URI location = URI.create("/files/" + saved.getId());
-        return ResponseEntity
-                .created(location)
-                .body(saved);
+        AnalysisResult ar = TextAnalyzer.analyze(saved.getData());
+
+        return ResponseEntity.created(URI.create("/files/" + saved.getId()))
+                .body(Map.of(
+                        "fileId",    saved.getId(),
+                        "filename",  saved.getFilename(),
+                        "analysis",  ar
+                ));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ByteArrayResource> download(@PathVariable Long id) {
-        FileEntity file = service.getFile(id);
-        ByteArrayResource resource = new ByteArrayResource(file.getData());
-
+    public ResponseEntity<byte[]> download(@PathVariable Long id) {
+        FileEntity f = service.getFile(id);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(file.getContentType()))
+                .contentType(MediaType.parseMediaType(f.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(resource);
+                        "attachment; filename=\"%s\"".formatted(f.getFilename()))
+                .body(f.getData());
     }
 
     @ExceptionHandler(DuplicateFileException.class)
-    public ResponseEntity<Map<String, String>> handleDuplicate(DuplicateFileException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
+    public ResponseEntity<Map<String,String>> duplicate(DuplicateFileException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", ex.getMessage()));
     }
 }

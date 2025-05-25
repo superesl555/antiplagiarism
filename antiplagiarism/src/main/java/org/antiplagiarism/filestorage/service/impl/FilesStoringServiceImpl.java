@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.List;  // <-- добавлен import
+import java.util.List;
 
 @Service
 @Transactional
@@ -31,7 +31,6 @@ public class FilesStoringServiceImpl implements FilesStoringService {
             byte[] content = file.getBytes();
             String hash = sha256(content);
 
-            // Проверяем дубликат
             fileRepository.findByHash(hash)
                     .ifPresent(f -> {
                         throw new DuplicateFileException(file.getOriginalFilename());
@@ -71,7 +70,6 @@ public class FilesStoringServiceImpl implements FilesStoringService {
         fileRepository.deleteById(id);
     }
 
-    // === утилита для SHA-256 ===
     private static String sha256(byte[] data) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

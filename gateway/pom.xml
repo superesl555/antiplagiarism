@@ -3,10 +3,12 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!-- ────────── ❶ ОБЩЕЕ ─────────────────────────────────────── -->
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Spring Boot 3.2.x -->
     <parent>
+        <!-- Spring Boot 3.2.x -->
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.4</version>
@@ -19,16 +21,20 @@
     <packaging>jar</packaging>
 
     <properties>
+        <!-- минимальная версия JDK, поддерживаемая Boot 3.2 -->
         <java.version>17</java.version>
-        <!-- Пантер-релиз Spring Cloud, совместимый с Boot 3.2 -->
+
+        <!-- «Panther» — ветка Spring Cloud для Boot 3.2 -->
         <spring.cloud.version>2023.0.5</spring.cloud.version>
-        <!-- Явно фиксируем Gateway 4.0.x -->
+
+        <!-- Фиксируем Gateway на 4.0.x (совместим с Boot 3.2) -->
         <spring-cloud-gateway.version>4.0.8</spring-cloud-gateway.version>
     </properties>
 
-    <!-- BOM Spring Cloud -->
+    <!-- ────────── ❷ BOM-ы (dependencyManagement) ──────────────── -->
     <dependencyManagement>
         <dependencies>
+            <!-- Полный BOM Spring Cloud «Panther» -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -37,7 +43,7 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Переопределяем только артефакты Gateway, чтобы не тянуть 4.1.x -->
+            <!-- Переопределяем точные версии Gateway 4.0.x -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-gateway-server</artifactId>
@@ -51,21 +57,32 @@
         </dependencies>
     </dependencyManagement>
 
+    <!-- ────────── ❸ Реальные зависимости приложения ──────────── -->
     <dependencies>
-        <!-- Стартер Gateway на реактивном стеке (WebFlux) -->
+        <!-- Реактивный Gateway (WebFlux; starter-web НЕ нужен) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
+
+        <!-- Стандартный Actuator: /actuator/health, /info и
+             автоматически /actuator/gateway/**                    -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
 
+    <!-- ────────── ❹ Плагины сборки ────────────────────────────── -->
     <build>
         <plugins>
+            <!-- Собирает runnable-jar -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
+            <!-- Флаг -parameters нужен Spring для имён арг-ов -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -73,8 +90,10 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>
